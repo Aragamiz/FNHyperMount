@@ -1,7 +1,7 @@
 {
   "manifest_version": 1,
   "appname": "FNHyperMount",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "title": "FNHyperMount",
   "description": "专为飞牛打造的高可靠 NFS 存储挂载与实时吞吐监控中心。支持向导式对端探测、automount 自动自愈与各挂载点独立实时吞吐监控。",
   "category": "utilities",

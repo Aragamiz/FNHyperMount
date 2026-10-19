@@ -6,6 +6,9 @@ FNHyperMount - Configuration and Constants
 import os
 from pathlib import Path
 
+# 版本号
+APP_VERSION = "0.1.0"
+
 # 默认服务端口
 DEFAULT_PORT = 8099
 DEFAULT_HOST = "0.0.0.0"
