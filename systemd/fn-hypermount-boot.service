@@ -1,0 +1,19 @@
+[Unit]
+Description=FNHyperMount Boot Arming - Re-arms systemd automount units after storage pool is online
+After=vol1.mount local-fs.target
+Wants=vol1.mount
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c '\
+  for i in $(seq 1 30); do \
+    if [ -d /vol1/1000 ]; then break; fi; \
+    sleep 1; \
+  done; \
+  for unit in $(systemctl list-unit-files "vol1-*.automount" --no-legend 2>/dev/null | awk "{print \$1}"); do \
+    systemctl restart "$unit" 2>/dev/null || true; \
+  done'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

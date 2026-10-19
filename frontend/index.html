@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FNHyperMount - 飞牛高可靠存储挂载中心</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'><path d='M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3z'/></svg>">
+</head>
+<body>
+  <div class="app-container">
+    <!-- 顶部导航栏 -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-icon">⚡</div>
+        <div class="logo-text">
+          <h1>FNHyperMount</h1>
+          <span class="subtitle">飞牛高可靠存储挂载管理中心</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-refresh" class="btn btn-secondary" title="刷新状态">
+          <span class="icon">🔄</span> 刷新
+        </button>
+        <button id="btn-open-wizard" class="btn btn-primary">
+          <span class="icon">➕</span> 添加 NFS 挂载
+        </button>
+      </div>
+    </header>
+
+    <!-- 顶部核心指标看板 -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon icon-blue">📁</div>
+        <div class="stat-info">
+          <span class="stat-label">总挂载点</span>
+          <span class="stat-value" id="stat-total-mounts">-</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon icon-green">🟢</div>
+        <div class="stat-info">
+          <span class="stat-label">正常在线</span>
+          <span class="stat-value" id="stat-online-mounts">-</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon icon-purple">📥</div>
+        <div class="stat-info">
+          <span class="stat-label">实时读取总吞吐</span>
+          <span class="stat-value" id="stat-read-speed">0 B/s</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon icon-amber">📤</div>
+        <div class="stat-info">
+          <span class="stat-label">实时写入总吞吐</span>
+          <span class="stat-value" id="stat-write-speed">0 B/s</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 挂载列表区域 -->
+    <main class="main-content">
+      <div class="section-header">
+        <h2>已管理的远程存储挂载</h2>
+        <span class="auto-refresh-tag">⚡ 内核级 IO 实时更新 (每 2 秒)</span>
+      </div>
+
+      <div id="mounts-container" class="mounts-list">
+        <!-- 动态渲染卡片 -->
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>正在读取系统内核挂载与吞吐数据...</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- 底部状态栏 -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span>守护特性：工业级 automount · hard,intr 防丢数据 · 90s 重启自愈宽限保护</span>
+      </div>
+      <div class="footer-right">
+        <span>FNHyperMount v1.0.0 (Zero-Dependency)</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- 向导式添加 Modal -->
+  <div id="wizard-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>🚀 新建 NFS 存储挂载向导</h3>
+        <button class="btn-close" id="btn-close-wizard">✕</button>
+      </div>
+
+      <div class="wizard-steps">
+        <div class="step-item active" data-step="1">
+          <span class="step-num">1</span>
+          <span class="step-title">探测目标</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item" data-step="2">
+          <span class="step-num">2</span>
+          <span class="step-title">选择目录</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item" data-step="3">
+          <span class="step-num">3</span>
+          <span class="step-title">策略配置</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item" data-step="4">
+          <span class="step-num">4</span>
+          <span class="step-title">验收完成</span>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <!-- 步骤 1: 探测对端 -->
+        <div class="step-panel" id="step-panel-1">
+          <div class="form-group">
+            <label>目标机器 IP 地址或主机名：</label>
+            <div class="input-with-btn">
+              <input type="text" id="wizard-server-ip" placeholder="例如：10.25.0.11 或 192.168.6.254" class="form-input">
+              <button id="btn-do-probe" class="btn btn-primary">🔍 探测目标机器</button>
+            </div>
+            <p class="form-hint">系统将自动检测目标机器连通性并拉取已导出的 NFS 共享目录列表。</p>
+          </div>
+
+          <div id="probe-result-box" class="probe-result-box hidden">
+            <!-- 动态填充探测结果 -->
+          </div>
+        </div>
+
+        <!-- 步骤 2: 选择共享与本地路径 -->
+        <div class="step-panel hidden" id="step-panel-2">
+          <div class="form-group">
+            <label>请选择目标机器导出的共享目录：</label>
+            <select id="wizard-export-select" class="form-select">
+              <!-- 动态填充选项 -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label>飞牛本地挂载路径：</label>
+            <input type="text" id="wizard-local-mountpoint" class="form-input" placeholder="/vol1/1000/TargetShare">
+            <p class="form-hint">如果飞牛本地该目录不存在，系统将自动安全创建并设置权限。</p>
+          </div>
+        </div>
+
+        <!-- 步骤 3: 策略配置 -->
+        <div class="step-panel hidden" id="step-panel-3">
+          <label class="form-label-block">选择挂载运行策略：</label>
+          <div class="preset-cards">
+            <label class="preset-card selected">
+              <input type="radio" name="wizard-preset" value="automount" checked>
+              <div class="preset-content">
+                <span class="preset-badge">🌟 推荐</span>
+                <h4>工业级高可靠模式 (automount)</h4>
+                <p>按需自动激活、开机不卡顿、目标机器重启后 90 秒内自动透明自愈，带 hard,intr 防丢数据。</p>
+              </div>
+            </label>
+            <label class="preset-card">
+              <input type="radio" name="wizard-preset" value="direct">
+              <div class="preset-content">
+                <h4>常驻直接挂载模式</h4>
+                <p>系统启动即挂载，适合目标机器 7×24 常驻在线、高并发直连场景。</p>
+              </div>
+            </label>
+            <label class="preset-card">
+              <input type="radio" name="wizard-preset" value="readonly">
+              <div class="preset-content">
+                <h4>安全只读模式 (ro)</h4>
+                <p>只读挂载，禁止飞牛端写入或修改，防止误删目标机器上的原文件。</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 步骤 4: 验收进度与结果 -->
+        <div class="step-panel hidden" id="step-panel-4">
+          <div class="validation-box">
+            <h4>挂载激活与全面读写体检：</h4>
+            <div class="checklist">
+              <div class="check-item" id="chk-net">
+                <span class="chk-icon">⏳</span> 目标机器网络连通性
+              </div>
+              <div class="check-item" id="chk-port">
+                <span class="chk-icon">⏳</span> NFS 2049 端口握手
+              </div>
+              <div class="check-item" id="chk-read">
+                <span class="chk-icon">⏳</span> 目录安全读取测试
+              </div>
+              <div class="check-item" id="chk-write">
+                <span class="chk-icon">⏳</span> 临时探针写入与落盘验证
+              </div>
+            </div>
+            <div id="wizard-final-msg" class="final-msg-box hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-wizard-prev" class="btn btn-secondary hidden">上一步</button>
+        <button id="btn-wizard-next" class="btn btn-primary" disabled>下一步 ➔</button>
+        <button id="btn-wizard-finish" class="btn btn-success hidden">完成并进入监控</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 健康体检报告 Modal -->
+  <div id="health-modal" class="modal-overlay hidden">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 id="health-modal-title">🩺 挂载点深度体检报告</h3>
+        <button class="btn-close" id="btn-close-health">✕</button>
+      </div>
+      <div class="modal-body" id="health-modal-body">
+        <div class="spinner"></div>
+        <p style="text-align:center;">正在发送探测报文与执行读写落盘测试...</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="btn-health-ok">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

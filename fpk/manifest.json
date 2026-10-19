@@ -1,0 +1,26 @@
+{
+  "manifest_version": 1,
+  "appname": "FNHyperMount",
+  "version": "1.0.0",
+  "title": "FNHyperMount",
+  "description": "专为飞牛打造的高可靠 NFS 存储挂载与实时吞吐监控中心。支持向导式对端探测、automount 自动自愈与各挂载点独立实时吞吐监控。",
+  "category": "utilities",
+  "developer": "HyperMount Team",
+  "icon": "ui/images/icon_256.png",
+  "port": 8099,
+  "protocol": "http",
+  "url": "http://{host}:8099",
+  "singleton": true,
+  "desktop": {
+    "title": "FNHyperMount",
+    "icon": "ui/images/icon_{0}.png",
+    "url": "http://{host}:8099",
+    "target": "_blank"
+  },
+  "scripts": {
+    "install": "scripts/install.sh",
+    "uninstall": "scripts/uninstall.sh",
+    "start": "systemctl start fn-hypermount.service",
+    "stop": "systemctl stop fn-hypermount.service"
+  }
+}

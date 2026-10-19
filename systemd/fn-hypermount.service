@@ -1,0 +1,19 @@
+[Unit]
+Description=FNHyperMount - fnOS High-Reliability NFS Mount Manager & Web Dashboard
+After=network-online.target local-fs.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/fn-hypermount/backend
+ExecStart=/usr/bin/python3 /opt/fn-hypermount/backend/app.py 8099
+Restart=always
+RestartSec=5s
+Environment=PYTHONUNBUFFERED=1
+
+# 进程保护
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
